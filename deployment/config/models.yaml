@@ -10,9 +10,22 @@ gnm:
   config_path: "../../train/config/gnm.yaml"
   ckpt_path: "../model_weights/gnm_large.pth"
 
-nomad: 
-  config_path: "../../train/config/nomad.yaml"
-  ckpt_path: "../model_weights/nomad.pth"
+nomad:
+  model_type: nomad
+  # [重点修改1] 权重文件路径
+  # ".." 回到 deployment 目录，然后进入 model_weights
+  ckpt_path: "../model_weights/nomad.pth" 
+  
+  # [重点修改2] 训练配置文件路径
+  # "../.." 回到 visualnav-transformer 根目录，然后进入 train/config
+  config_path: "../../train/config/nomad.yaml" 
+  
+  image_size: [85, 64]
+  context_size: 5
+  len_traj_pred: 8
+  normalize: True
+  # 推理时的去噪步数，如果你想跑快点可以改小（比如 5），但 10 比较稳
+  num_diffusion_iters: 10
 
 
 # add your own model configs here after saving the *.pth file to ../model_weight
