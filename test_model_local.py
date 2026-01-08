@@ -1,3 +1,5 @@
+# 使用随机噪声数据验证了模型的前向传播通路
+
 import torch
 import sys
 import os

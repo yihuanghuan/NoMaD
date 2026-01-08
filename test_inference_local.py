@@ -65,7 +65,7 @@ def test_inference():
     # --- 配置参数 ---
     CKPT_PATH = "deployment/model_weights/nomad.pth" 
     CONTEXT_SIZE = 3  # [重要修正] 必须与模型一致
-    NUM_DIFFUSION_ITERS = 10 
+    NUM_DIFFUSION_ITERS = 10 # 推理时的扩散迭代次数
     
     # 1. 加载模型
     try:
