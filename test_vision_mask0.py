@@ -201,8 +201,8 @@ def test_vision():
     # ==========================================
     navigation_tasks = [
         # (历史观测, 当前观测, 目标)
-        ("test_ob.jpg", "test_ob.jpg", "test_goal1.jpg"), 
-        ("test_ob.jpg", "test_ob.jpg", "test_goal2.jpg"), 
+        ("test_ob_corri.jpg", "test_ob1_corri.jpg", "test_goal1_corri.jpg"), 
+        ("test_ob_corri.jpg", "test_ob1_corri.jpg", "test_goal2_corri.jpg"), 
         # 你可以添加更多任务...
     ]
     
@@ -270,17 +270,36 @@ def run_inference(model, obs_batch, goal_batch, mask_batch, device, obs_path, go
         dist_input = obs_cond.squeeze(1) if len(obs_cond.shape) == 3 else obs_cond
         dist_pred = model("dist_pred_net", obsgoal_cond=dist_input)
         dist_val = dist_pred.item()
-        print(f"模型预测的剩余距离 (Temporal Distance): {dist_val:.4f}")
+        print(f"\n[关键指标] 模型预测的剩余距离 (Temporal Distance): {dist_val:.4f}")
+        print(f"             (含义: 到达目标需要 {dist_val:.1f} 个时间步)")
         
-        # [DEBUG] 打印视觉编码的特征向量（前10个值）
-        print(f"[DEBUG] obs_cond 前10个值: {obs_cond[0, :10].cpu().numpy()}")
+        # [DEBUG] 检查目标条件是否生效
+        # 如果 obs == goal，理论上 dist_val 应该接近 0
+        obs_goal_similarity = torch.cosine_similarity(
+            obs_batch[:, -3:].flatten(),  # 最后一帧观测
+            goal_batch.flatten(),
+            dim=0
+        ).item()
+        print(f"[DEBUG] 观测-目标图像相似度: {obs_goal_similarity:.4f} (1.0=完全相同)")
+        print(f"[DEBUG] obs_cond 特征范数: {torch.norm(obs_cond).item():.4f}")
 
-        # 距离阈值停车逻辑
-        STOP_THRESHOLD = 0.5 # 导航模式下阈值可能需要调小一点，或者保持 6.0 看情况
-        # 注意: 6.0 是 temporal distance (时间步)，不是米。
+        # ===== 修复方案：双重停止条件 =====
+        # 问题：模型的 dist_pred 不可靠（即使 obs==goal，仍预测 dist=2.17）
+        # 解决：添加图像相似度作为额外停止条件
         
-        if dist_val < STOP_THRESHOLD:
-            print(f"   -> [自动控制] 距离 {dist_val:.4f} < 阈值，判定已到达目标。")
+        SIMILARITY_THRESHOLD = 0.99  # 相似度 > 0.99 认为已到达
+        DIST_THRESHOLD = 1.0         # 或者距离 < 1.0 步
+        
+        if obs_goal_similarity > SIMILARITY_THRESHOLD:
+            print(f"   -> [强制停止] 图像相似度 {obs_goal_similarity:.4f} > {SIMILARITY_THRESHOLD}")
+            print(f"                判定已到达目标，输出零轨迹")
+            waypoints = np.zeros((8, 2))
+            visualize_result(obs_path, goal_path, waypoints, out_name)
+            return
+        
+        if dist_val < DIST_THRESHOLD:
+            print(f"   -> [距离停止] 剩余距离 {dist_val:.4f} < {DIST_THRESHOLD}")
+            print(f"                判定接近目标，输出零轨迹")
             waypoints = np.zeros((8, 2))
             visualize_result(obs_path, goal_path, waypoints, out_name)
             return

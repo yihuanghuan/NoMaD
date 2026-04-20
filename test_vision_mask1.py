@@ -220,7 +220,7 @@ def test_vision():
     os.makedirs(output_dir, exist_ok=True)
 
     # 测试所有图片
-    test_images = ["test1.jpg", "test2.jpg", "test3.jpg", "test4.jpg", "test5.jpg", "test6.jpg", "test7.jpg", "test_ob.jpg","test_ob1.jpg","test_ob2.jpg"]
+    test_images = ["test1.jpg", "test2.jpg", "test3.jpg", "test4.jpg", "test5.jpg", "test6.jpg", "test7.jpg","test8.jpg","test9.jpg", "test_ob.jpg","test_ob1.jpg","test_ob2.jpg"]
     
     print("\n=== 开始批量测试 (探索模式 Mask=1) ===")
     print("预期: 遇到转角时，轨迹应向空旷区域弯曲")
